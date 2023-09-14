@@ -1,0 +1,22 @@
+# Use the official WordPress image as the starting point
+FROM wordpress:latest
+
+# Set maintainer information
+LABEL maintainer="Rakesh jangidrakesh71@gmail.com 9887211207"
+
+# Create a directory for the WordPress theme
+RUN mkdir -p /var/www/html/wp-content/themes/wp_theme
+
+# Download and install a WordPress theme
+RUN curl -Lo /var/www/html/wp-content/themes/wp_theme/wp_theme.zip https://downloads.wordpress.org/theme/sleek-portfolio.1.0.0.zip \
+    && apt-get update \
+    && apt-get install -y unzip \
+    && unzip /var/www/html/wp-content/themes/wp_theme/wp_theme.zip -d /var/www/html/wp-content/themes/wp_theme \
+    && rm /var/www/html/wp-content/themes/wp_theme/wp_theme.zip
+
+# Set up permissions for WordPress
+RUN chown -R www-data:www-data /var/www/html
+
+# Command to start the Apache web server (default behavior)
+CMD ["apache2-foreground"]
+

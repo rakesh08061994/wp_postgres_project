@@ -1,0 +1,5 @@
+# Use the official PostgreSQL image as the base image
+FROM postgres:latest
+MAINTAINER Rakesh jangidrakesh71@gmail.com
+# Define the command to start the PostgreSQL server
+CMD ["postgres"]
