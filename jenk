@@ -1,0 +1,64 @@
+pipeline {
+    agent any
+
+    environment {
+        // Define environment variables as needed
+        DOCKER_WP_NAME = 'rakesh08061994/wordpress'
+        DOCKER_DB_NAME = 'rakesh08061994/postgres'
+        DOCKER_HUB = "jangidrakesh71"
+        DOCKER_IMAGE_TAG = 'latest'
+        GITHUB_REPO_URL = "https://github.com/rakesh08061994/wp_postgres_project.git"
+        DOCKERHUB_CREDENTIALS = credentials('dockerhub_login')
+    }
+
+    stages {
+        stage('Checkout the code from GitHub') {
+            steps {
+                // Checkout the code from your GitHub repository
+                checkout scmGit(branches: [[name: '*/master']], extensions: [], userRemoteConfigs: [[credentialsId: 'github-username-password', url: 'https://github.com/rakesh08061994/wp_postgres_project.git']])
+            }
+        }
+
+        stage('Build Docker Image') {
+            steps {
+                script {
+                    // Build the Docker image from the Dockerfile(s) in your repository
+                    sh "docker build -t ${DOCKER_HUB}:${DOCKER_IMAGE_TAG} -f Dockerfile.wp ."
+                    sh "docker build -t ${DOCKER_HUB}:${DOCKER_IMAGE_TAG} -f Dockerfile.db ."
+                }
+            }
+        }
+
+        stage('Add New Tags to Docker Images') {
+            steps {
+                script {
+                    // Add the new tag to the Docker WordPress image
+                    sh "docker tag ${DOCKER_WP_NAME}:${DOCKER_IMAGE_TAG} ${DOCKER_HUB}:${DOCKER_IMAGE_TAG}"
+                    // Add the new tag to the Docker PostgreSQL image
+                    sh "docker tag ${DOCKER_DB_NAME}:${DOCKER_IMAGE_TAG} ${DOCKER_HUB}:${DOCKER_IMAGE_TAG}"
+                }
+            }
+        }
+
+        stage('Docker Hub Login') {
+            steps {
+                sh 'echo $DOCKERHUB_CREDENTIALS_PSW | docker login -u $DOCKERHUB_CREDENTIALS_USR --password-stdin'
+            }
+        }
+
+        stage('Push Build Images with New Tags to Docker Hub') {
+            steps {
+                // Push the Docker WordPress image with the new tag to Docker Hub
+                sh "docker push ${DOCKER_HUB}/wordpress:${DOCKER_IMAGE_TAG}"
+                // Push the Docker PostgreSQL image with the new tag to Docker Hub
+                sh "docker push ${DOCKER_HUB}/postgres:${DOCKER_IMAGE_TAG}"
+            }
+        }
+    }
+
+    post {
+        always {
+            sh 'docker logout'
+        }
+    }
+}

@@ -1,0 +1,56 @@
+pipeline {
+    agent any
+
+    environment {
+        // Define environment variables as needed
+        DOCKER_WP_NAME = 'rakesh08061994/wordpress'
+        DOCKER_DB_NAME = 'rakesh08061994/postgres'
+         DOCKER_IMAGE_TAG = 'latest'
+        GITHUB_REPO_URL = "https://github.com/rakesh08061994/wp_postgres_project.git"
+        DOCKERHUB_CREDENTIALS=credentials('dockerhubpwd')
+    }
+
+    stages {
+        stage('Checkout the code from GItHub') {
+            steps {
+                // Checkout the code from your GitHub repository
+                checkout scmGit(branches: [[name: '*/master']], extensions: [], userRemoteConfigs: [[credentialsId: 'github-username-password', url: 'https://github.com/rakesh08061994/wp_postgres_project.git']])
+            }
+        }
+
+        stage('Build Docker Image') {
+            steps {
+                script {
+                    // Build the Docker image from the Dockerfile(s) in your repository
+                    sh "docker build -t ${DOCKER_WP_NAME} -f Dockerfile.wp ."
+                    sh "docker build -t ${DOCKER_DB_NAME} -f Dockerfile.db ."
+                }
+            }
+        }
+		stage('Docker Hub Login') {
+
+			steps {
+				sh 'echo $DOCKERHUB_CREDENTIALS_PSW | docker login -u $DOCKERHUB_CREDENTIALS_USR --password-stdin'
+			}
+		}
+
+		stage('Push Build Image to Docker Hub') {
+
+			steps {
+                // Push the Docker WP image to Docker Hub
+                sh "docker push ${DOCKER_WP_NAME}:${DOCKER_IMAGE_TAG}"
+                 // Push the Docker DB image to Docker Hub
+                sh "docker push ${DOCKER_DB_NAME}:${DOCKER_IMAGE_TAG}"
+			}
+		}
+    }
+
+    post {
+        success {
+            echo "Docker image ${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG} successfully built and pushed to Docker Hub."
+        }
+        failure {
+            echo "Failed to build and push Docker image to Docker Hub."
+        }
+    }
+}
