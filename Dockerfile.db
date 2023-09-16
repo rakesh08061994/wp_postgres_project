@@ -1,6 +1,11 @@
-#PostgreSQL image as the base image
+# Use the official PostgreSQL image as the base image
 FROM postgres:latest
+
+# Install PostgreSQL utilities
+RUN apt-get update && apt-get install -y postgresql-client
+
+# Expose any custom ports (if needed)
 EXPOSE 5432
 
-
-
+# Start PostgreSQL
+CMD ["postgres"]
